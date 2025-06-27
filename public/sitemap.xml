@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Root -->
+  <url>
+    <loc>https://your-api.onrender.com/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <!-- Example bookmark entry -->
+  <url>
+    <loc>https://your-api.onrender.com/api/bookmarks/{bookmarkId}</loc>
+    <lastmod>2025-06-27T00:00:00.000Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <!-- Example collection entry -->
+  <url>
+    <loc>https://your-api.onrender.com/api/collections/{collectionId}</loc>
+    <lastmod>2025-06-27T00:00:00.000Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+</urlset>
