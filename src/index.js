@@ -2,58 +2,63 @@
 
 require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
+const passport = require('passport');
 const mongoose = require('mongoose');
 const path = require('path');
+const morgan = require('morgan');
+const cors = require('cors');
 
 const config = require('./config');
 
-// Import routers
-const authRoutes         = require('./routes/auth');
-const bookmarkRoutes     = require('./routes/bookmarks');
-const userRoutes         = require('./routes/users');
-const commentRoutes      = require('./routes/comments');
-const voteRoutes         = require('./routes/votes');
-const favoriteRoutes     = require('./routes/favorites');
-const subscriptionRoutes = require('./routes/subscriptions');
-const collectionRoutes   = require('./routes/collections');
-const adminRoutes        = require('./routes/admin');
-const seoRoutes          = require('./routes/seo');
-
-// Import middleware
-const errorHandler = require('./middleware/errorHandler');
+// Initialize Passport strategies
+require('./utils/passport');
 
 const app = express();
 
-// Parse JSON and URL-encoded bodies
+// Enable CORS for all origins
+app.use(cors());
+
+// HTTP request logging
+app.use(morgan('combined'));
+
+// Parse JSON & URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files (robots.txt, sitemap.xml) from /public
+// Session (required by Passport)
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
+    resave: false,
+    saveUninitialized: false
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Serve static files (robots.txt, sitemap.xml)
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Mount API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/bookmarks', bookmarkRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/comments', commentRoutes);
-app.use('/api/votes', voteRoutes);
-app.use('/api/favorites', favoriteRoutes);
-app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/api/collections', collectionRoutes);
-app.use('/api/admin', adminRoutes);
+// Mount routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/bookmarks', require('./routes/bookmarks'));
+app.use('/api/users', require('./routes/user'));
+app.use('/api/comments', require('./routes/comments'));
+app.use('/api/votes', require('./routes/votes'));
+app.use('/api/favorites', require('./routes/favorites'));
+app.use('/api/subscriptions', require('./routes/subscriptions'));
+app.use('/api/collections', require('./routes/collections'));
+app.use('/api/admin', require('./routes/admin'));
 
 // SEO endpoints (sitemap.xml, robots.txt)
-app.use('/', seoRoutes);
+app.use('/', require('./routes/seo'));
 
 // Global error handler
-app.use(errorHandler);
+app.use(require('./middleware/errorHandler'));
 
 // Connect to MongoDB and start the server
-mongoose
-  .connect(config.mongoUri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  })
+mongoose.connect(config.mongoUri)
   .then(() => {
     app.listen(config.port, () => {
       console.log(`🚀 Server listening on port ${config.port}`);

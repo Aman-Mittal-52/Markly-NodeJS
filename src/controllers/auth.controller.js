@@ -4,10 +4,10 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const createError = require('http-errors');
 
-/* helper: sign JWT */
-const signToken = (user) =>
-  jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: '7d',
+// helper: sign JWT
+const signToken = user =>
+  jwt.sign({ id: user._id.toString(), role: user.role }, process.env.JWT_SECRET, {
+    expiresIn: '7d'
   });
 
 // POST /api/auth/register
@@ -27,12 +27,13 @@ exports.register = async (req, res, next) => {
 
     res.status(201).json({
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        id:        user._id,
+        name:      user.name,
+        email:     user.email,
+        role:      user.role,
+        avatarUrl: user.avatarUrl
       },
-      token: signToken(user),
+      token: signToken(user)
     });
   } catch (err) {
     next(err);
@@ -54,14 +55,32 @@ exports.login = async (req, res, next) => {
 
     res.json({
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        id:        user._id,
+        name:      user.name,
+        email:     user.email,
+        role:      user.role,
+        avatarUrl: user.avatarUrl
       },
-      token: signToken(user),
+      token: signToken(user)
     });
   } catch (err) {
     next(err);
   }
+};
+
+// POST /api/auth/google/callback
+// (invoked by Passport)
+exports.googleCallback = (req, res) => {
+  const { user, token } = req.user;
+  // For SPA: redirect with token, or just return JSON:
+  res.json({
+    user: {
+      id:        user._id,
+      name:      user.name,
+      email:     user.email,
+      role:      user.role,
+      avatarUrl: user.avatarUrl
+    },
+    token
+  });
 };

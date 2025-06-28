@@ -25,6 +25,10 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
+  avatarUrl: {
+    type: String,
+    default: ''       // empty until user uploads or logs in via Google
+  },
   subscriptions: [
     { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
   ],

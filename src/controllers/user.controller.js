@@ -4,6 +4,9 @@ const createError = require('http-errors');
 const User = require('../models/User');
 const Bookmark = require('../models/Bookmark');
 const Collection = require('../models/Collection');
+const multer = require('../utils/multer');
+const cloudinary = require('../utils/cloudinary');
+const streamifier = require('streamifier');
 
 // GET /api/users/:id/bookmarks
 exports.getUserBookmarks = async (req, res, next) => {
@@ -18,7 +21,7 @@ exports.getUserBookmarks = async (req, res, next) => {
 
     const bookmarks = await Bookmark.find(filter)
       .sort('-createdAt')
-      .populate('author', 'name');
+      .populate('author', 'name avatarUrl');
     res.json(bookmarks);
   } catch (err) {
     next(err);
@@ -38,7 +41,7 @@ exports.getUserCollections = async (req, res, next) => {
 
     const collections = await Collection.find(filter)
       .sort('-createdAt')
-      .populate('bookmarks');
+      .populate({ path: 'bookmarks', populate: { path: 'author', select: 'name avatarUrl' } });
     res.json(collections);
   } catch (err) {
     next(err);
@@ -76,8 +79,36 @@ exports.updateOwnProfile = async (req, res, next) => {
       id:    user._id,
       name:  user.name,
       email: user.email,
-      role:  user.role
+      role:  user.role,
+      avatarUrl: user.avatarUrl
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PUT /api/users/me/photo
+exports.updateProfilePhoto = async (req, res, next) => {
+  try {
+    if (!req.file) throw createError(400, 'No file uploaded');
+
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: 'avatars' },
+      async (err, result) => {
+        if (err) return next(err);
+        try {
+          const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { avatarUrl: result.secure_url },
+            { new: true }
+          ).select('-passwordHash');
+          res.json({ avatarUrl: user.avatarUrl });
+        } catch (updateErr) {
+          next(updateErr);
+        }
+      }
+    );
+    streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
   } catch (err) {
     next(err);
   }
